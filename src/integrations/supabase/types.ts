@@ -14,7 +14,116 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      business_leads: {
+        Row: {
+          business_description: string | null
+          business_name: string
+          city: string
+          core_services: string | null
+          created_at: string
+          follow_up_notes: string | null
+          id: string
+          industries: string[]
+          logo_url: string | null
+          notes: string | null
+          state: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          business_description?: string | null
+          business_name: string
+          city?: string
+          core_services?: string | null
+          created_at?: string
+          follow_up_notes?: string | null
+          id?: string
+          industries?: string[]
+          logo_url?: string | null
+          notes?: string | null
+          state?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          business_description?: string | null
+          business_name?: string
+          city?: string
+          core_services?: string | null
+          created_at?: string
+          follow_up_notes?: string | null
+          id?: string
+          industries?: string[]
+          logo_url?: string | null
+          notes?: string | null
+          state?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      generated_previews: {
+        Row: {
+          ai_notes: string | null
+          brand_positioning: string | null
+          copy_direction: string | null
+          created_at: string
+          feature_sections: Json | null
+          hero_headline: string | null
+          hero_image_url: string | null
+          hero_subheadline: string | null
+          id: string
+          lead_id: string
+          page_structure: Json | null
+          perplexity_research: string | null
+          section_images: Json | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          ai_notes?: string | null
+          brand_positioning?: string | null
+          copy_direction?: string | null
+          created_at?: string
+          feature_sections?: Json | null
+          hero_headline?: string | null
+          hero_image_url?: string | null
+          hero_subheadline?: string | null
+          id?: string
+          lead_id: string
+          page_structure?: Json | null
+          perplexity_research?: string | null
+          section_images?: Json | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          ai_notes?: string | null
+          brand_positioning?: string | null
+          copy_direction?: string | null
+          created_at?: string
+          feature_sections?: Json | null
+          hero_headline?: string | null
+          hero_image_url?: string | null
+          hero_subheadline?: string | null
+          id?: string
+          lead_id?: string
+          page_structure?: Json | null
+          perplexity_research?: string | null
+          section_images?: Json | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generated_previews_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "business_leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

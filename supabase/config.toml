@@ -1,1 +1,7 @@
 project_id = "uqoidqrpuidkfaweizik"
+
+[functions.generate-preview]
+verify_jwt = false
+
+[functions.submit-lead]
+verify_jwt = false
