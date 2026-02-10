@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 const industries = [
   "Restaurant / Food Service",
@@ -21,6 +23,7 @@ const industries = [
 ];
 
 const IntakeForm = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     businessName: "",
     city: "Phoenix",
@@ -54,10 +57,49 @@ const IntakeForm = () => {
     }
     setIsSubmitting(true);
 
-    // TODO: Submit to Supabase
-    await new Promise((r) => setTimeout(r, 1500));
-    toast.success("Submission received! We'll prepare your preview concept.");
-    setIsSubmitting(false);
+    try {
+      // Upload logo if provided
+      let logoUrl: string | null = null;
+      if (logoFile) {
+        const ext = logoFile.name.split(".").pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+        const { error: uploadErr } = await supabase.storage
+          .from("logos")
+          .upload(fileName, logoFile);
+        if (!uploadErr) {
+          const { data: urlData } = supabase.storage.from("logos").getPublicUrl(fileName);
+          logoUrl = urlData.publicUrl;
+        }
+      }
+
+      // Submit lead via edge function
+      const { data, error } = await supabase.functions.invoke("submit-lead", {
+        body: {
+          business_name: formData.businessName,
+          city: formData.city,
+          state: formData.state,
+          industries: formData.industries,
+          core_services: formData.services,
+          business_description: formData.description,
+          notes: formData.notes,
+          logo_url: logoUrl,
+        },
+      });
+
+      if (error) throw error;
+
+      toast.success("Submission received! Your preview is being generated...");
+      
+      // Navigate to preview page (will poll for completion)
+      if (data?.lead_id) {
+        navigate(`/preview/${data.lead_id}`);
+      }
+    } catch (err) {
+      console.error("Submission error:", err);
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -199,7 +241,7 @@ const IntakeForm = () => {
             className="w-full"
             disabled={isSubmitting}
           >
-            {isSubmitting ? "Submitting..." : "Submit for Preview"}
+            {isSubmitting ? "Generating Your Preview..." : "Submit for Preview"}
           </Button>
 
           <p className="text-center text-xs text-muted-foreground tracking-wider">
