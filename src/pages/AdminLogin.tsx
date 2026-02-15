@@ -12,15 +12,30 @@ const AdminLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      toast.error(error.message);
+    if (isSignUp) {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { emailRedirectTo: window.location.origin + "/admin" },
+      });
+      if (error) {
+        toast.error(error.message);
+      } else {
+        toast.success("Check your email to confirm your account, then sign in.");
+        setIsSignUp(false);
+      }
     } else {
-      navigate("/admin");
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        toast.error(error.message);
+      } else {
+        navigate("/admin");
+      }
     }
     setLoading(false);
   };
@@ -29,8 +44,10 @@ const AdminLogin = () => {
     <div className="min-h-screen bg-background flex items-center justify-center">
       <div className="glass-surface metallic-border rounded-sm p-10 w-full max-w-sm">
         <img src={kovaLogo} alt="Kova" className="h-10 mx-auto mb-8" />
-        <h2 className="font-display text-xl tracking-wide text-center mb-6">Admin Access</h2>
-        <form onSubmit={handleLogin} className="space-y-4">
+        <h2 className="font-display text-xl tracking-wide text-center mb-6">
+          {isSignUp ? "Create Admin Account" : "Admin Access"}
+        </h2>
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label className="text-xs tracking-widest uppercase text-muted-foreground">Email</Label>
             <Input
@@ -52,8 +69,15 @@ const AdminLogin = () => {
             />
           </div>
           <Button type="submit" variant="gold" className="w-full" disabled={loading}>
-            {loading ? "Signing in..." : "Sign In"}
+            {loading ? (isSignUp ? "Creating..." : "Signing in...") : (isSignUp ? "Create Account" : "Sign In")}
           </Button>
+          <button
+            type="button"
+            onClick={() => setIsSignUp(!isSignUp)}
+            className="w-full text-xs text-muted-foreground hover:text-kova-gold transition-colors tracking-wider"
+          >
+            {isSignUp ? "Already have an account? Sign in" : "Need an account? Sign up"}
+          </button>
         </form>
       </div>
     </div>
