@@ -156,16 +156,19 @@ const PreviewPage = () => {
               {preview.hero_subheadline}
             </p>
 
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-sm bg-kova-surface border border-kova-chrome/20 text-xs text-muted-foreground tracking-wider uppercase">
-              <Lock className="w-3.5 h-3.5 text-kova-gold" />
+            <button
+              onClick={() => document.getElementById("preview-content")?.scrollIntoView({ behavior: "smooth" })}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-sm border border-kova-gold/40 bg-gradient-to-r from-kova-gold/10 to-kova-gold/5 text-sm text-kova-gold tracking-wider uppercase hover:from-kova-gold/20 hover:to-kova-gold/10 transition-all cursor-pointer"
+            >
+              <Lock className="w-3.5 h-3.5" />
               Preview Concept — {lead?.business_name || "Your Business"}
-            </div>
+            </button>
           </motion.div>
         </div>
       </section>
 
       {/* Brand Positioning */}
-      <section className="py-16 bg-kova-surface/50">
+      <section id="preview-content" className="py-16 bg-kova-surface/50">
         <div className="container max-w-3xl mx-auto px-6 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
