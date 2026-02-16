@@ -3,7 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Lock, Calendar, Loader2 } from "lucide-react";
+import { Lock, Calendar, Loader2, Eye } from "lucide-react";
 import kovaLogo from "@/assets/kova-logo.png";
 import PricingSection from "@/components/PricingSection";
 import FunnelCTA from "@/components/FunnelCTA";
@@ -32,6 +32,7 @@ const PreviewPage = () => {
   const [preview, setPreview] = useState<Preview | null>(null);
   const [lead, setLead] = useState<Lead | null>(null);
   const [loading, setLoading] = useState(true);
+  const [revealed, setRevealed] = useState(false);
 
   useEffect(() => {
     if (!leadId) return;
@@ -156,14 +157,63 @@ const PreviewPage = () => {
               {preview.hero_subheadline}
             </p>
 
-            <button
-              onClick={() => document.getElementById("preview-content")?.scrollIntoView({ behavior: "smooth" })}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-sm border border-kova-gold/40 bg-gradient-to-r from-kova-gold/10 to-kova-gold/5 text-sm text-kova-gold tracking-wider uppercase hover:from-kova-gold/20 hover:to-kova-gold/10 transition-all cursor-pointer"
-            >
-              <Lock className="w-3.5 h-3.5" />
-              Preview Concept — {lead?.business_name || "Your Business"}
-            </button>
+            {!revealed ? (
+              <button
+                onClick={() => setRevealed(true)}
+                className="inline-flex items-center gap-2 px-8 py-4 rounded-sm border border-kova-gold/40 bg-gradient-to-r from-kova-gold/10 to-kova-gold/5 text-sm text-kova-gold tracking-wider uppercase hover:from-kova-gold/20 hover:to-kova-gold/10 transition-all cursor-pointer"
+              >
+                <Eye className="w-4 h-4" />
+                Reveal — {lead?.business_name || "Your Business"}
+              </button>
+            ) : (
+              <motion.p
+                className="text-xs text-kova-gold tracking-widest uppercase"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+              >
+                Your Generated Homepage Concept
+              </motion.p>
+            )}
           </motion.div>
+
+          {/* Revealed Website Preview Frame */}
+          {revealed && (
+            <motion.div
+              className="mt-10 w-full max-w-5xl mx-auto"
+              initial={{ opacity: 0, y: 40, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.6, ease: "easeOut" }}
+            >
+              <div className="rounded-sm metallic-border overflow-hidden shadow-2xl shadow-kova-gold/10">
+                <div className="bg-kova-surface-elevated flex items-center gap-2 px-4 py-2.5 border-b border-kova-chrome/20">
+                  <div className="flex gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full bg-red-500/60" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/60" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-green-500/60" />
+                  </div>
+                  <div className="flex-1 mx-4">
+                    <div className="bg-kova-obsidian/60 rounded-sm px-3 py-1 text-[10px] text-muted-foreground tracking-wider text-center truncate">
+                      {lead?.business_name?.toLowerCase().replace(/\s+/g, '')}.kovabuilt.com
+                    </div>
+                  </div>
+                </div>
+                {preview.hero_image_url ? (
+                  <img
+                    src={preview.hero_image_url}
+                    alt={`${lead?.business_name} website preview`}
+                    className="w-full h-auto block"
+                  />
+                ) : (
+                  <div className="aspect-video bg-kova-surface flex items-center justify-center">
+                    <p className="text-sm text-muted-foreground">No preview image generated</p>
+                  </div>
+                )}
+              </div>
+              <p className="text-center text-xs text-muted-foreground mt-4 tracking-wider uppercase">
+                This is an AI-generated concept — not a finished product
+              </p>
+            </motion.div>
+          )}
         </div>
       </section>
 
