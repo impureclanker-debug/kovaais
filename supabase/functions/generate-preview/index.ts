@@ -57,7 +57,7 @@ Description: ${lead.business_description || "Not provided"}
 Notes: ${lead.notes || "None"}
     `.trim();
 
-    // Step 1: Perplexity research on the business's industry and local market
+    // Step 1a: Perplexity research on the business's industry and local market
     let perplexityResearch = "";
     try {
       const perpResp = await fetch("https://api.perplexity.ai/chat/completions", {
@@ -85,8 +85,40 @@ Notes: ${lead.notes || "None"}
         perplexityResearch = perpData.choices?.[0]?.message?.content || "";
       }
     } catch (e) {
-      console.error("Perplexity research failed:", e);
-      perplexityResearch = "Research unavailable - proceeding with AI generation.";
+      console.error("Perplexity market research failed:", e);
+      perplexityResearch = "Market research unavailable.";
+    }
+
+    // Step 1b: Perplexity research on best website design layouts for this industry
+    let designResearch = "";
+    try {
+      const designResp = await fetch("https://api.perplexity.ai/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${PERPLEXITY_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "sonar",
+          messages: [
+            {
+              role: "system",
+              content: "You are a web design expert. Analyze current top-performing website designs and layouts. Be specific about visual elements, color schemes, typography, and section layouts. Keep it under 600 words.",
+            },
+            {
+              role: "user",
+              content: `Research the best modern website homepage designs for ${(lead.industries || []).join("/")} businesses like "${lead.business_name}". Focus on:\n1. What layout patterns do the top-performing sites in this industry use (hero sections, service grids, testimonials placement, CTA placement)?\n2. What color palettes and typography create trust and conversions in this industry?\n3. What visual elements (photos, icons, gradients, overlays) do premium sites in this space use?\n4. Describe 2-3 specific homepage layouts from top competitors that look professional and convert well.\n5. What sections should a full homepage include from top to bottom?`,
+            },
+          ],
+        }),
+      });
+      if (designResp.ok) {
+        const designData = await designResp.json();
+        designResearch = designData.choices?.[0]?.message?.content || "";
+      }
+    } catch (e) {
+      console.error("Perplexity design research failed:", e);
+      designResearch = "Design research unavailable.";
     }
 
     // Step 2: Use Lovable AI (Gemini) for brand positioning, page structure, copy direction
@@ -126,7 +158,7 @@ Return a JSON object (no markdown fences) with these exact keys:
           },
           {
             role: "user",
-            content: `Create a premium website concept preview for this business:\n\n${businessContext}\n\nMarket Research:\n${perplexityResearch}`,
+            content: `Create a premium website concept preview for this business:\n\n${businessContext}\n\nMarket Research:\n${perplexityResearch}\n\nDesign Research (use this to inform layout and visual direction):\n${designResearch}`,
           },
         ],
         tools: [
@@ -219,8 +251,14 @@ Return a JSON object (no markdown fences) with these exact keys:
       concept = JSON.parse(content.replace(/```json?\n?/g, "").replace(/```/g, ""));
     }
 
-    // Step 3: Generate hero image with Gemini image model
+    // Step 3: Generate full-page website screenshot with Gemini image model
     let heroImageUrl = "";
+    
+    // Build section descriptions from the concept for the image prompt
+    const sectionDescriptions = (concept.page_structure || [])
+      .map((s: any, i: number) => `${i + 1}. ${s.section}: ${s.concept}`)
+      .join("\n");
+
     try {
       const imgResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
@@ -233,7 +271,28 @@ Return a JSON object (no markdown fences) with these exact keys:
           messages: [
             {
               role: "user",
-              content: `Generate a premium hero website background image for a ${(lead.industries || []).join("/")} business called "${lead.business_name}" in ${lead.city}, ${lead.state}. Style: Abstract macro photography of architectural brushed steel and warm brass accents with elements relating to their industry. Soft cinematic studio lighting, shallow depth of field, elegant metallic curves, minimalist composition. High-end corporate luxury aesthetic. 16:9 aspect ratio. Ultra high resolution.`,
+              content: `Generate a FULL-PAGE website homepage screenshot mockup for a ${(lead.industries || []).join("/")} business called "${lead.business_name}" in ${lead.city}, ${lead.state}.
+
+This should look like a real, complete, scrollable website homepage screenshot — NOT just a hero banner. Show the ENTIRE page from top navigation bar to footer.
+
+HEADLINE: "${concept.hero_headline}"
+SUBHEADLINE: "${concept.hero_subheadline}"
+BRAND POSITIONING: ${concept.brand_positioning}
+
+PAGE SECTIONS (show ALL of these from top to bottom):
+- Navigation bar with logo and menu items
+- Hero section with headline, subheadline, and a call-to-action button
+${sectionDescriptions}
+- Testimonials/reviews section
+- Call-to-action banner
+- Footer with contact info and links
+
+DESIGN DIRECTION:
+${concept.copy_direction}
+
+STYLE: Dark, premium, luxury aesthetic. Deep obsidian/charcoal background (#0F1113). Gold/champagne accent color (#C5A059). Clean modern sans-serif typography. Generous whitespace. Metallic borders and subtle gradients. Professional photography-quality imagery. The design should look like a $15,000 custom-built website.
+
+IMPORTANT: This must be a 9:16 tall portrait format showing the COMPLETE homepage from top to bottom, like a long scrolling website screenshot. Show realistic placeholder content, images, icons, and UI elements throughout. Ultra high resolution.`,
             },
           ],
           modalities: ["image", "text"],
